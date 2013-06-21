@@ -27,3 +27,4 @@ Gem::Specification.new do |s|
   s.add_dependency('mongoid', "> 3.1")
 
 
+end

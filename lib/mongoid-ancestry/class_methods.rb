@@ -6,10 +6,11 @@ module Mongoid
           :ancestry_field    => :ancestry,
           :cache_depth       => false,
           :depth_cache_field => :ancestry_depth,
-          :orphan_strategy   => :destroy
+          :orphan_strategy   => :destroy,
+          :touchable         => false
         }
 
-        valid_opts = [:ancestry_field, :cache_depth, :depth_cache_field, :orphan_strategy]
+        valid_opts = [:ancestry_field, :cache_depth, :depth_cache_field, :orphan_strategy, :touchable]
         unless opts.is_a?(Hash) &&  opts.keys.all? {|opt| valid_opts.include?(opt) }
           raise Error.new("Invalid options for has_ancestry. Only hash is allowed.\n Defaults: #{defaults.inspect}")
         end
@@ -28,6 +29,10 @@ module Mongoid
         # Create orphan strategy accessor and set to option or default (writer comes from DynamicClassMethods)
         cattr_reader :orphan_strategy
         self.orphan_strategy = opts[:orphan_strategy]
+
+        # Create touch accessor and set to option or default
+        cattr_accessor :touchable
+        self.touchable = opts[:touchable]
 
         # Validate format of ancestry column value
         primary_key_format = opts[:primary_key_format] || /[a-z0-9]+/
@@ -68,6 +73,10 @@ module Mongoid
 
         # Update descendants with new ancestry before save
         before_save :update_descendants_with_new_ancestry
+
+        before_save :touch_parent, if: lambda { |obj|
+          obj.touchable && obj.send(:"#{self.class.ancestry_field}_changed?")
+        }
 
         # Apply orphan strategy before destroy
         before_destroy :apply_orphan_strategy

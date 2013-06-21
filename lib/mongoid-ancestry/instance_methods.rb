@@ -32,6 +32,10 @@ module Mongoid
       end
     end
 
+    def touch_parent
+      parent.touch
+    end
+
     # Apply orphan strategy
     def apply_orphan_strategy
       # Skip this if callbacks are disabled
